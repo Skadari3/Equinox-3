@@ -14,7 +14,7 @@ namespace Equinox.Areas.Admin.Controllers
             _context = context;
         }
 
-        [AcceptVerbs("Get")]
+        [AcceptVerbs("Get", "Post")]
         public JsonResult CheckPhone(string phoneNumber)
         {
             bool exists = _context.Users.Any(u => u.PhoneNumber == phoneNumber);
