@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Sqlite;
 using Equinox.Models;
 using Equinox.Models.ViewModels;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Equinox.Controllers
@@ -12,10 +10,6 @@ namespace Equinox.Controllers
     {
         private readonly EquinoxContext _context;
 
-        private const string BookingSessionKey = "Bookings";
-        private const string ClubFilterKey = "SelectedClub";
-        private const string CategoryFilterKey = "SelectedCategory";
-
         public GymController(EquinoxContext context)
         {
             _context = context;
@@ -23,19 +17,21 @@ namespace Equinox.Controllers
 
         private void SetBookingCount()
         {
-            var bookings = HttpContext.Session.GetObjectFromJson<List<int>>(BookingSessionKey) ?? new List<int>();
-            ViewBag.BookingCount = bookings.Count;
+            var sessionHelper = new SessionHelper(HttpContext.Session);
+            ViewBag.BookingCount = sessionHelper.GetBookings().Count;
         }
 
         public IActionResult ShowClasses(string? club, string? category)
         {
             SetBookingCount();
 
-            club ??= HttpContext.Session.GetString(ClubFilterKey) ?? "All";
-            category ??= HttpContext.Session.GetString(CategoryFilterKey) ?? "All";
+            var sessionHelper = new SessionHelper(HttpContext.Session);
 
-            HttpContext.Session.SetString(ClubFilterKey, club);
-            HttpContext.Session.SetString(CategoryFilterKey, category);
+            club ??= sessionHelper.GetSelectedClub();
+            category ??= sessionHelper.GetSelectedCategory();
+
+            sessionHelper.SetSelectedClub(club);
+            sessionHelper.SetSelectedCategory(category);
 
             var model = new FilterViewModel
             {
@@ -58,14 +54,17 @@ namespace Equinox.Controllers
                 query = query.Where(c => c.ClassCategory.Name == category);
 
             model.AvailableClasses = query.ToList();
+
             return View(model);
         }
 
         [HttpPost]
         public IActionResult Filter(string club, string category)
         {
-            HttpContext.Session.SetString(ClubFilterKey, club);
-            HttpContext.Session.SetString(CategoryFilterKey, category);
+            var sessionHelper = new SessionHelper(HttpContext.Session);
+            sessionHelper.SetSelectedClub(club);
+            sessionHelper.SetSelectedCategory(category);
+
             return RedirectToAction("ShowClasses");
         }
 
@@ -88,12 +87,13 @@ namespace Equinox.Controllers
         [HttpPost]
         public IActionResult Book(int id)
         {
-            var bookings = HttpContext.Session.GetObjectFromJson<List<int>>(BookingSessionKey) ?? new List<int>();
+            var sessionHelper = new SessionHelper(HttpContext.Session);
+            var bookings = sessionHelper.GetBookings();
 
             if (!bookings.Contains(id))
             {
                 bookings.Add(id);
-                HttpContext.Session.SetObjectAsJson(BookingSessionKey, bookings);
+                sessionHelper.SetBookings(bookings);
                 TempData["Message"] = "Class booked successfully!";
             }
 
@@ -104,7 +104,8 @@ namespace Equinox.Controllers
         {
             SetBookingCount();
 
-            var bookings = HttpContext.Session.GetObjectFromJson<List<int>>(BookingSessionKey) ?? new List<int>();
+            var sessionHelper = new SessionHelper(HttpContext.Session);
+            var bookings = sessionHelper.GetBookings();
 
             var bookedClasses = _context.Classes
                 .Include(c => c.Club)
@@ -119,12 +120,13 @@ namespace Equinox.Controllers
         [HttpPost]
         public IActionResult Cancel(int id)
         {
-            var bookings = HttpContext.Session.GetObjectFromJson<List<int>>(BookingSessionKey) ?? new List<int>();
+            var sessionHelper = new SessionHelper(HttpContext.Session);
+            var bookings = sessionHelper.GetBookings();
 
             if (bookings.Contains(id))
             {
                 bookings.Remove(id);
-                HttpContext.Session.SetObjectAsJson(BookingSessionKey, bookings);
+                sessionHelper.SetBookings(bookings);
                 TempData["Message"] = "Booking canceled.";
             }
 

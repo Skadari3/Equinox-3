@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Equinox.Models;
+using System.Linq;
 
-using Microsoft.EntityFrameworkCore.Sqlite;
 namespace Equinox.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -20,62 +20,69 @@ namespace Equinox.Areas.Admin.Controllers
             return View(categories);
         }
 
-        public IActionResult Create() => View();
-
-
+        public IActionResult Create()
+        {
+            return View();
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(ClassCategory category)
         {
-
             if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("", "Please fix the error");
                 return View(category);
             }
 
             _context.ClassCategories.Add(category);
             _context.SaveChanges();
+
+            TempData["Message"] = "Class category created successfully.";
             return RedirectToAction(nameof(Index));
         }
-
-
-
-
-
-
 
         public IActionResult Edit(int id)
         {
             var category = _context.ClassCategories.Find(id);
-            return category == null ? NotFound() : View(category);
+            if (category == null)
+            {
+                return NotFound();
+            }
+            return View(category);
         }
 
         [HttpPost]
-
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, ClassCategory category)
         {
-            if (id != category.ClassCategoryId) return BadRequest();
-            if (ModelState.IsValid)
+            if (id != category.ClassCategoryId)
             {
-                _context.Update(category);
-                _context.SaveChanges();
-                return RedirectToAction(nameof(Index));
+                return BadRequest();
             }
-            ModelState.AddModelError("", "Please fix the error");
-            return View(category);
+
+            if (!ModelState.IsValid)
+            {
+                return View(category);
+            }
+
+            _context.Update(category);
+            _context.SaveChanges();
+
+            TempData["Message"] = "Class category updated successfully.";
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Delete(int id)
         {
             var category = _context.ClassCategories.Find(id);
-            return category == null ? NotFound() : View(category);
+            if (category == null)
+            {
+                return NotFound();
+            }
+            return View(category);
         }
 
         [HttpPost, ActionName("Delete")]
-
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
         {
@@ -84,7 +91,9 @@ namespace Equinox.Areas.Admin.Controllers
             {
                 _context.ClassCategories.Remove(category);
                 _context.SaveChanges();
+                TempData["Message"] = "Class category deleted successfully.";
             }
+
             return RedirectToAction(nameof(Index));
         }
     }

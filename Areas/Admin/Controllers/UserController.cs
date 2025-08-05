@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Equinox.Models;
-using Microsoft.EntityFrameworkCore.Sqlite;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
 
 namespace Equinox.Areas.Admin.Controllers
 {
@@ -8,8 +10,9 @@ namespace Equinox.Areas.Admin.Controllers
     public class UserController : Controller
     {
         private readonly EquinoxContext _context;
-         private readonly ILogger<ClubController> _logger;
-        public UserController(EquinoxContext context, ILogger<ClubController> logger)
+        private readonly ILogger<UserController> _logger;
+
+        public UserController(EquinoxContext context, ILogger<UserController> logger)
         {
             _context = context;
             _logger = logger;
@@ -22,54 +25,66 @@ namespace Equinox.Areas.Admin.Controllers
             return View(users);
         }
 
-        public IActionResult Create() => View();
-
-
+        public IActionResult Create()
+        {
+            return View();
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(User user)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Users.Add(user);
-                _context.SaveChanges();
-                return RedirectToAction(nameof(Index));
+                return View(user);
             }
-            return View(user);
+
+            _context.Users.Add(user);
+            _context.SaveChanges();
+
+            TempData["Message"] = "User created successfully.";
+            return RedirectToAction(nameof(Index));
         }
-
-
-
-
-
-
-
 
         public IActionResult Edit(int id)
         {
             var user = _context.Users.Find(id);
-            return user == null ? NotFound() : View(user);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return View(user);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, User user)
         {
-            if (id != user.UserId) return BadRequest();
-            if (ModelState.IsValid)
+            if (id != user.UserId)
             {
-                _context.Update(user);
-                _context.SaveChanges();
-                return RedirectToAction(nameof(Index));
+                return BadRequest();
             }
-            return View(user);
+
+            if (!ModelState.IsValid)
+            {
+                return View(user);
+            }
+
+            _context.Update(user);
+            _context.SaveChanges();
+
+            TempData["Message"] = "User updated successfully.";
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Delete(int id)
         {
             var user = _context.Users.Find(id);
-            return user == null ? NotFound() : View(user);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return View(user);
         }
 
         [HttpPost, ActionName("Delete")]
@@ -81,8 +96,28 @@ namespace Equinox.Areas.Admin.Controllers
             {
                 _context.Users.Remove(user);
                 _context.SaveChanges();
+                TempData["Message"] = "User deleted successfully.";
             }
+
             return RedirectToAction(nameof(Index));
+        }
+
+        [AcceptVerbs("GET", "POST")]
+        public IActionResult ValidateDOB(DateTime dob)
+        {
+            var minAge = 8;
+            var maxAge = 80;
+            var today = DateTime.Today;
+
+            var age = today.Year - dob.Year;
+            if (dob.Date > today.AddYears(-age)) age--;
+
+            if (dob >= today || age < minAge || age > maxAge)
+            {
+                return Json($"Age must be between {minAge} and {maxAge}, and DOB must be in the past.");
+            }
+
+            return Json(true);
         }
     }
 }

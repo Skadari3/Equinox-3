@@ -1,19 +1,37 @@
 using Microsoft.AspNetCore.Http;
-using System.Text.Json;
+using System.Collections.Generic;
 
 namespace Equinox.Models
 {
-    public static class SessionHelper
+    public class SessionHelper
     {
-        public static void SetObjectAsJson(this ISession session, string key, object value)
+        private readonly ISession _session;
+
+        private const string BookingKey = "Bookings";
+        private const string ClubFilterKey = "SelectedClub";
+        private const string CategoryFilterKey = "SelectedCategory";
+
+        public SessionHelper(ISession session)
         {
-            session.SetString(key, JsonSerializer.Serialize(value));
+            _session = session;
         }
 
-        public static T? GetObjectFromJson<T>(this ISession session, string key)
-        {
-            var value = session.GetString(key);
-            return value == null ? default : JsonSerializer.Deserialize<T>(value);
-        }
+        public List<int> GetBookings() =>
+            _session.GetObjectFromJson<List<int>>(BookingKey) ?? new List<int>();
+
+        public void SetBookings(List<int> bookings) =>
+            _session.SetObjectAsJson(BookingKey, bookings);
+
+        public string GetSelectedClub() =>
+            _session.GetString(ClubFilterKey) ?? "All";
+
+        public void SetSelectedClub(string club) =>
+            _session.SetString(ClubFilterKey, club);
+
+        public string GetSelectedCategory() =>
+            _session.GetString(CategoryFilterKey) ?? "All";
+
+        public void SetSelectedCategory(string category) =>
+            _session.SetString(CategoryFilterKey, category);
     }
 }

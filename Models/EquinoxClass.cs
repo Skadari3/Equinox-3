@@ -14,8 +14,6 @@ namespace Equinox.Models
         public string ClassDay { get; set; } = string.Empty;
 
         public string Time { get; set; } = string.Empty;
-
-        // Foreign Key Relationships
         public int ClassCategoryId { get; set; }
         public ClassCategory ClassCategory { get; set; } = null!;
 

@@ -17,21 +17,18 @@ namespace Equinox.Models
         {
             base.OnModelCreating(modelBuilder);
 
-            // Seed Clubs
             modelBuilder.Entity<Club>().HasData(
                 new Club { ClubId = 1, Name = "Chicago Loop", PhoneNumber = "812-234-4563" },
                 new Club { ClubId = 2, Name = "Lincoln Park", PhoneNumber = "630-567-4561" },
                  new Club { ClubId = 3, Name = "Wheaton Park", PhoneNumber = "456-567-4561" }
             );
 
-            // Seed ClassCategories
             modelBuilder.Entity<ClassCategory>().HasData(
                 new ClassCategory { ClassCategoryId = 1, Name = "Yoga" },
                 new ClassCategory { ClassCategoryId = 2, Name = "HIIT" },
                 new ClassCategory { ClassCategoryId = 3, Name = "Boxing" }
             );
 
-            // Seed Users (Coaches)
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
@@ -62,7 +59,6 @@ namespace Equinox.Models
                 }
             );
 
-            // Seed Equinox Classes
             modelBuilder.Entity<EquinoxClass>().HasData(
                 new EquinoxClass
                 {
